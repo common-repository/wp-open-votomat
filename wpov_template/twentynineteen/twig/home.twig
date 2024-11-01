@@ -1,0 +1,96 @@
+{% extends "base.twig" %}
+
+{% block header %}
+    {% if admin_settings.logo %}
+        {{ fn('wp_get_attachment_image', admin_settings.logo_id, 'large', false, {
+            alt : admin_settings.app_name,
+            class : 'img-fluid'
+        }) }}
+    {% else %}
+    {{ admin_settings.app_name }}
+    {% endif %}   
+{% endblock %}
+
+{% block content %}
+    {% if admin_settings.show_github %}
+    <a class="d-none d-lg-block" href="https://github.com/magma-design-studio/wp-open-votomat" target="_blank" style="position: fixed; top: 0; right: 0;"><img width="149" height="149" src="https://github.blog/wp-content/uploads/2008/12/forkme_right_white_ffffff.png?resize=149%2C149" class="attachment-full size-full" alt="Fork me on GitHub" data-recalc-dims="1"></a>   
+    {% endif %}
+
+    {% if admin_settings.text_intro %}
+    <div class="row mt-3">
+        <div class="alert alert-light" role="alert">
+            {{ fn('apply_filters', 'the_content', admin_settings.text_intro) }}
+        </div>        
+    </div>
+    {% endif %}
+
+    {% for post in posts %}
+        {% set status = post.publication_status_array() %}
+        {% if status.is_active or fn('is_user_logged_in') %}
+    <div class="row mb-3">
+        <div class="card w-100">
+            <div class="card-body">
+                <h5 class="card-title">{{ post.title() }}</h5>
+                {% if (not status.is_live and fn('is_user_logged_in')) and not status.after_live_description %}
+                    <h6 class="card-subtitle mb-2 text-muted">{{ __('Visible for admins only!', WPOV__PLUGIN_NAME_SLUG) }}</h6>
+                {% endif %}
+                <p class="card-text">{{ post.the_content() }}</p>
+                {% if status.is_live or status.keep_online or fn('is_user_logged_in') %}
+                <a href="{{ post.link() }}" class="btn btn-primary">Befragung starten</a>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+        {% endif %}
+    {% endfor %}
+
+    {% if admin_settings.sponsor %}
+    <div class="mt-5 mb-3">
+        {% if admin_settings.sponsors_section_title %}
+            <h3>{{ admin_settings.sponsors_section_title }}</h3>
+        {% endif %}
+        {% set row_start %}
+        <div class="row">
+        {% endset %}
+
+        {% set row_end %}
+        </div>                        
+        {% endset %}
+        {% for sponsor in admin_settings.sponsor %}
+        {% if sponsor.seperator %}
+            {% if not loop.first %}{{ row_end }}{% endif %}
+        <div class="w-100 mt-4 mb-4"></div>
+            {{ row_start }}
+        {% elseif loop.first  %}
+            {% if not loop.first %}{{ row_end }}{% endif %}
+            {{ row_start }}
+        {% endif %}
+
+        {% set columns = sponsor.column_width ? sponsor.column_width : 1 %}
+        {% set columns_medium = (columns*2) %}
+        {% set columns_small = (columns*4) %}
+
+        <div class="col-{{ columns_small }} col-sm-{{ columns_medium }}">
+            {% if sponsor.column_headline %}
+            <p class="mb-4 h6">{{ sponsor.column_headline }}</p>
+            {% endif %}   
+            {% set _sponsor %}
+                {{ fn('wp_get_attachment_image', sponsor.logo_id, 'large', false, {
+                    alt : sponsor.title,
+                    class : 'img-fluid'
+                }) }}              
+            {% endset %}
+            {% if sponsor.url %}
+            <a href="{{ sponsor.url }}" target="_blank">
+                  {{ _sponsor }}
+            </a>
+            {% else %}
+                  {{ _sponsor }}
+            {% endif %}
+        </div>
+        {% endfor %}
+        {{ row_end }}
+    </div>
+    {% endif %}
+
+{% endblock %}
